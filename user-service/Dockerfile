@@ -1,14 +1,21 @@
-# Use lightweight OpenJDK image
-FROM openjdk:17-jdk-alpine
+# ---------- Stage 1: Build ----------
+FROM maven:3.9.6-eclipse-temurin-17 as build
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy the JAR file from the build context
-COPY target/user-service-0.0.1-SNAPSHOT.jar app.jar
+# Copy source code
+COPY . .
 
-# Expose the port the app runs on
-EXPOSE 8080
+# Build the application
+RUN mvn clean package -DskipTests
 
-# Run the JAR file
+# ---------- Stage 2: Run ----------
+FROM eclipse-temurin:17-jdk-alpine
+
+WORKDIR /app
+
+# Copy JAR from the builder stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
